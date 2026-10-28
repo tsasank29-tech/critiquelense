@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CritiqueLens AI - Enterprise Scale (1M Users)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hover-preview-exposure { filter: brightness(1.2) contrast(1.05) drop-shadow(0 0 12px rgba(99,102,241,0.5)); transition: filter 0.15s ease-out; }
+        .hover-preview-blur { filter: contrast(1.1) saturate(1.1) blur(0.3px); transition: filter 0.15s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 p-2 rounded-xl text-white font-bold text-xl shadow-lg shadow-indigo-500/20">📷</div>
+            <div>
+                <h1 class="font-bold text-lg text-white tracking-tight">CritiqueLens AI <span class="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full ml-2">1M Scale</span></h1>
+                <p class="text-xs text-slate-400">Powered by Meta Model API (Muse Spark 1.3 & SAM 3.1)</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium px-4 py-2 rounded-xl border border-slate-700 transition">
+                <span>Upload Custom Photo</span>
+                <input type="file" id="imageUpload" accept="image/*" class="hidden">
+            </label>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Viewer Column -->
+        <section class="lg:col-span-7 flex flex-col space-y-4">
+            <div class="relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center min-h-[480px]">
+                <div class="relative w-full h-full flex items-center justify-center p-4">
+                    <img id="activeImage" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80" alt="Active Photo" class="max-h-[520px] w-auto object-contain rounded-xl transition duration-200">
+                    
+                    <!-- SAM 3.1 Dynamic Bounding Overlay -->
+                    <div id="samOverlay" class="absolute hidden border-2 border-indigo-400 bg-indigo-500/10 rounded-lg pointer-events-none transition-all duration-200">
+                        <span id="samLabel" class="absolute -top-7 left-0 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow">SAM 3.1 Active</span>
+                    </div>
+                </div>
+
+                <div id="statusBadge" class="absolute bottom-4 left-4 bg-emerald-500/90 text-slate-950 font-semibold text-xs px-3 py-1.5 rounded-lg shadow hidden backdrop-blur">
+                    ⚡ Instant Hover Correction Active
+                </div>
+            </div>
+        </section>
+
+        <!-- Feedback & Feed Column -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-emerald-400 mb-3">✨ Positives</h3>
+                <div id="positivesList" class="space-y-3">
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                        <h4 class="font-semibold text-slate-200 text-sm">Balanced Rule of Thirds</h4>
+                        <p class="text-xs text-slate-400 mt-1">Horizon alignment is well composed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-rose-400 mb-3">⚠️ Areas for Improvement (Hover to Preview)</h3>
+                <div id="negativesList" class="space-y-3">
+                    
+                    <div onmouseenter="triggerHoverFix('exposure')" onmouseleave="clearHoverFix()" 
+                         class="bg-slate-900 border border-slate-800 hover:border-rose-500/60 p-4 rounded-xl cursor-pointer transition">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-slate-200 text-sm">1. Underexposed Foreground Shadows</h4>
+                            <span class="text-xs bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded">Hover Fix ⚡</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Shadow details are clipped. Hover to preview exposure boost.</p>
+                    </div>
+
+                    <div onmouseenter="triggerHoverFix('blur')" onmouseleave="clearHoverFix()" 
+                         class="bg-slate-900 border border-slate-800 hover:border-rose-500/60 p-4 rounded-xl cursor-pointer transition">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-slate-200 text-sm">2. Distracting Background Glare</h4>
+                            <span class="text-xs bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded">Hover Fix ⚡</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Light leak near center. Hover to preview optical clarity fix.</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const activeImage = document.getElementById('activeImage');
+        const samOverlay = document.getElementById('samOverlay');
+        const statusBadge = document.getElementById('statusBadge');
+
+        function triggerHoverFix(type) {
+            statusBadge.classList.remove('hidden');
+            samOverlay.classList.remove('hidden');
+            
+            if (type === 'exposure') {
+                activeImage.classList.add('hover-preview-exposure');
+                samOverlay.style.width = '60%';
+                samOverlay.style.height = '40%';
+                samOverlay.style.bottom = '10%';
+                samOverlay.style.left = '20%';
+            } else {
+                activeImage.classList.add('hover-preview-blur');
+                samOverlay.style.width = '30%';
+                samOverlay.style.height = '25%';
+                samOverlay.style.top = '15%';
+                samOverlay.style.right = '25%';
+            }
+        }
+
+        function clearHoverFix() {
+            statusBadge.classList.add('hidden');
+            samOverlay.classList.add('hidden');
+            activeImage.classList.remove('hover-preview-exposure', 'hover-preview-blur');
+        }
+
+        document.getElementById('imageUpload').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const base64 = event.target.result;
+                activeImage.src = base64;
+            };
+            reader.readAsDataURL(file);
+        });
+    </script>
+</body>
+</html>

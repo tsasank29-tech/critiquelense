@@ -1,0 +1,6 @@
+{
+  "name": "critiquelens-frontend",
+  "version": "1.0.0",
+  "description": "Frontend static assets for CritiqueLens AI",
+  "private": true
+}
